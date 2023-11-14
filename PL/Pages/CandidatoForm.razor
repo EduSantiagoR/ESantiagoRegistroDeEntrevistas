@@ -1,0 +1,162 @@
+﻿@page "/candidatoForm/{idCandidato:int}"
+@inject NavigationManager NavigationManager
+
+<h3 class="text-center">Candidato Form</h3>
+<hr />
+<div>
+    <form @onsubmit="Action">
+        <div class="row mb-3">
+            <div class="col col-4">
+                <label>Nombre</label>
+                <input class="form-control" placeholder="Nombre" @bind="candidato.Nombre"/>
+            </div>
+            <div class="col col-4">
+                <label>Apellido paterno</label>
+                <input class="form-control" placeholder="Apellido paterno" @bind="candidato.ApellidoPaterno" />
+            </div>
+            <div class="col col-4">
+                <label>Apellido materno</label>
+                <input class="form-control" placeholder="Apellido materno" @bind="candidato.ApellidoMaterno" />
+            </div>
+        </div>
+        <div class="row mb-3">
+            <div class="col col-4">
+                <label>Contacto</label>
+                <input class="form-control" placeholder="Contacto" @bind="candidato.Contacto" />
+            </div>
+            <div class="col col-4">
+                <label>Pretensión económica</label>
+                <input class="form-control" placeholder="Pretensión enconómica" @bind="candidato.PretensionEconomica" />
+            </div>
+            <div class="col col-4">
+                <label>Promedio</label>
+                <input class="form-control" placeholder="Promedio" @bind="candidato.Promedio" />
+            </div>
+        </div>
+        <div class="row mb-3">
+            <div class="col col-4">
+                <label>Universidad</label>
+                <select class="form-control" @bind="candidato.Universidad.IdUniversidad">
+                    <option value="0">Selecciona la universidad</option>
+                    @foreach(Model.Universidad universidad in GetUniversidades())
+                    {
+                        <option value="@universidad.IdUniversidad">@universidad.Nombre</option>
+                    }
+                </select>
+            </div>
+        </div>
+        <div>
+            <button class="btn btn-success" type="submit">Guardar</button>
+            <a class="btn btn-danger" href="http://localhost:5108/candidatos">Volver</a>
+        </div>
+    </form>
+</div>
+@code {
+    [Parameter]
+    public int idCandidato { get; set; }
+
+    Model.Candidato candidato;
+
+    protected override void OnInitialized()
+    {
+        candidato = new Model.Candidato();
+        candidato.Universidad = new Model.Universidad();
+        if(idCandidato != 0)
+        {
+            GetById(idCandidato);
+        }
+    }
+
+    void Action()
+    {
+        if(idCandidato == 0)
+        {
+            using (EsantiagoRegistroDeEntrevistasContext context = new EsantiagoRegistroDeEntrevistasContext())
+            {
+                Candidato nuevoCandidato = new Candidato();
+                nuevoCandidato.Nombre = candidato.Nombre;
+                nuevoCandidato.ApellidoPaterno = candidato.ApellidoPaterno;
+                nuevoCandidato.ApellidoMaterno = candidato.ApellidoMaterno;
+                nuevoCandidato.Contacto = candidato.Contacto;
+                nuevoCandidato.Promedio = candidato.Promedio;
+                nuevoCandidato.PretensionEconomica = candidato.PretensionEconomica;
+                nuevoCandidato.IdUniversidad = candidato.Universidad.IdUniversidad;
+                context.Candidatos.Add(nuevoCandidato);
+                context.SaveChanges();
+            }
+        }
+        else
+        {
+            using(EsantiagoRegistroDeEntrevistasContext context = new EsantiagoRegistroDeEntrevistasContext())
+            {
+                var query = (from candidat in context.Candidatos where candidat.IdCandidato == idCandidato select candidat).SingleOrDefault();
+                query.IdCandidato = candidato.IdCandidato;
+                query.Nombre = candidato.Nombre;
+                query.ApellidoPaterno = candidato.ApellidoPaterno;
+                query.ApellidoMaterno = candidato.ApellidoMaterno;
+                query.Contacto = candidato.Contacto;
+                query.Promedio = candidato.Promedio;
+                query.PretensionEconomica = candidato.PretensionEconomica;
+                query.IdUniversidad = candidato.Universidad.IdUniversidad;
+                context.SaveChanges();
+            }
+        }
+        NavigationManager.NavigateTo("/candidatos");
+    }
+    Model.Candidato GetById(int idCandidato)
+    {
+        using(EsantiagoRegistroDeEntrevistasContext context = new EsantiagoRegistroDeEntrevistasContext())
+        {
+            var query = (from candidat in context.Candidatos
+                         join uni in context.Universidads on candidat.IdUniversidad equals uni.IdUniversidad
+                         where candidat.IdCandidato == idCandidato
+                         select new
+                         {
+                             IdCandidato = candidat.IdCandidato,
+                             Nombre = candidat.Nombre,
+                             ApellidoPaterno = candidat.ApellidoPaterno,
+                             ApellidoMaterno = candidat.ApellidoMaterno,
+                             Contacto = candidat.Contacto,
+                             PretensionEconomica = candidat.PretensionEconomica,
+                             Promedio = candidat.Promedio,
+                             IdUniversidad = uni.IdUniversidad
+                         }).FirstOrDefault();
+            if (query != null)
+            {
+                candidato.IdCandidato = query.IdCandidato;
+                candidato.Nombre = query.Nombre;
+                candidato.ApellidoPaterno = query.ApellidoPaterno;
+                candidato.ApellidoMaterno = query.ApellidoMaterno;
+                candidato.Contacto = query.Contacto;
+                candidato.PretensionEconomica = query.PretensionEconomica;
+                candidato.Promedio = query.Promedio;
+                candidato.Universidad.IdUniversidad = query.IdUniversidad;
+            }
+        }
+        return candidato;
+    }
+    public static List<object> GetUniversidades()
+    {
+        List<object> universidades = new List<object>();
+        using(EsantiagoRegistroDeEntrevistasContext context = new EsantiagoRegistroDeEntrevistasContext())
+        {
+            var query = (from uni in context.Universidads
+                         select new
+                         {
+                             IdUniversidad = uni.IdUniversidad,
+                             NombreUniversidad = uni.Nombre
+                         });
+            if(query != null)
+            {
+                foreach(var item in query)
+                {
+                    Model.Universidad universidad = new Model.Universidad();
+                    universidad.IdUniversidad = item.IdUniversidad;
+                    universidad.Nombre = item.NombreUniversidad;
+                    universidades.Add(universidad);
+                }
+            }
+        }
+        return universidades;
+    }
+}

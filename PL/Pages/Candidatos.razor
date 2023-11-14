@@ -1,0 +1,93 @@
+﻿@page "/candidatos"
+@inject NavigationManager NavigationManager
+<h3 class="text-center">Candidatos</h3>
+<hr />
+<div>
+    <a class="btn btn-success" href="http://localhost:5108/candidatoForm/0"><i class="fa-solid fa-user-plus"></i>  Agregar un candidato</a>
+</div>
+<hr />
+<div>
+    <table class="table table-dark table-hover text-center">
+        <thead>
+            <tr>
+                <th>Editar</th>
+                <th>Nombre</th>
+                <th>Contacto</th>
+                <th>Pretensión ($)</th>
+                <th>Promedio</th>
+                <th>Universidad</th>
+                <th>Eliminar</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach(Model.Candidato candidato in GetAll())
+            {
+                <tr>
+                    <td><a class="btn btn-warning" @onclick="()=>ChangeView(candidato.IdCandidato)"><i class="fa-solid fa-user-pen"></i></a></td>
+                    <td>@candidato.Nombre @candidato.ApellidoPaterno @candidato.ApellidoMaterno</td>
+                    <td>@candidato.Contacto</td>
+                    <td>@candidato.PretensionEconomica</td>
+                    <td>@candidato.Promedio</td>
+                    <td>@candidato.Universidad.Nombre</td>
+                    <td><a class="btn btn-danger" @onclick="()=>Delete(candidato.IdCandidato)"><i class="fa-solid fa-trash"></i></a></td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+@code {
+    public static List<object> GetAll()
+    {
+        List<object> candidatos = new List<object>();
+        using(EsantiagoRegistroDeEntrevistasContext context = new EsantiagoRegistroDeEntrevistasContext())
+        {
+            var query = (from candidat in context.Candidatos
+                         join uni in context.Universidads on candidat.IdUniversidad equals uni.IdUniversidad
+                         select new
+                         {
+                             IdCandidato = candidat.IdCandidato,
+                             Nombre = candidat.Nombre,
+                             ApellidoPaterno = candidat.ApellidoPaterno,
+                             ApellidoMaterno = candidat.ApellidoMaterno,
+                             Contacto = candidat.Contacto,
+                             Pretension = candidat.PretensionEconomica,
+                             Promedio = candidat.Promedio,
+                             IdUniversidad = uni.IdUniversidad,
+                             NombreUniversidad = uni.Nombre
+                         });
+            if(query!= null)
+            {
+                foreach(var item in query)
+                {
+                    Model.Candidato nuevoCandidato = new Model.Candidato();
+                    nuevoCandidato.Universidad = new Model.Universidad();
+                    nuevoCandidato.IdCandidato = item.IdCandidato;
+                    nuevoCandidato.Nombre = item.Nombre;
+                    nuevoCandidato.ApellidoPaterno = item.ApellidoPaterno;
+                    nuevoCandidato.ApellidoMaterno = item.ApellidoMaterno;
+                    nuevoCandidato.Contacto = item.Contacto;
+                    nuevoCandidato.PretensionEconomica = item.Pretension;
+                    nuevoCandidato.Promedio = item.Promedio;
+                    nuevoCandidato.Universidad.IdUniversidad = item.IdUniversidad;
+                    nuevoCandidato.Universidad.Nombre = item.NombreUniversidad;
+                    candidatos.Add(nuevoCandidato);
+                }
+            }
+        }
+        return candidatos;
+    }
+    void Delete(int idCandidato)
+    {
+        using(EsantiagoRegistroDeEntrevistasContext context = new EsantiagoRegistroDeEntrevistasContext())
+        {
+            var query = (from candidat in context.Candidatos where candidat.IdCandidato == idCandidato select candidat).First();
+            context.Candidatos.Remove(query);
+            context.SaveChanges();
+        }
+        NavigationManager.NavigateTo("/candidatos");
+    }
+    void ChangeView(int idCandidato)
+    {
+        NavigationManager.NavigateTo($"candidatoForm/{idCandidato}");
+    }
+}

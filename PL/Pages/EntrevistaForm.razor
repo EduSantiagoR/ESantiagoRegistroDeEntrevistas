@@ -1,0 +1,127 @@
+﻿@page "/entrevistaForm/{idEntrevista:int}"
+@inject NavigationManager NavigationManager
+<h3 class="text-center">Entrevista Form</h3>
+<div>
+    <form @onsubmit="Action">
+        <div class="row mb-3">
+            <div class="col col-4">
+                <label>Candidato</label>
+                <select class="form-control" @bind="entrevista.Candidato.IdCandidato">
+                    <option value="0">Selecciona un candidato</option>
+                    @foreach(Model.Candidato candidato in GetCandidatos())
+                    {
+                        <option value="@candidato.IdCandidato">@candidato.Nombre @candidato.ApellidoPaterno @candidato.ApellidoMaterno</option>
+                    }
+                </select>
+            </div>
+            <div class="col col-4">
+                <label>Calificación de psicométricos</label>
+                <input class="form-control" placeholder="Calificación" @bind="entrevista.CalificacionPsicometricos" />
+            </div>
+            <div class="col col-4">
+                <label>Fecha de entrevista</label>
+                <input class="form-control" placeholder="Fecha de entrevista" @bind="entrevista.FechaEntrevista" type="date" />
+            </div>
+        </div>
+        <div>
+            <a class="btn btn-danger" href="http://localhost:5108/entrevistas">Volver</a>
+            <button type="submit" class="btn btn-success">Guardar</button>
+        </div>
+    </form>
+</div>
+@code {
+    [Parameter]
+    public int idEntrevista { get; set; }
+
+    Model.Entrevista entrevista;
+
+    protected override void OnInitialized()
+    {
+        entrevista = new Model.Entrevista();
+        entrevista.Candidato = new Model.Candidato();
+        entrevista.Candidato.Universidad = new Model.Universidad();
+        if(idEntrevista != 0 && idEntrevista != 0)
+        {
+            GetById(idEntrevista);
+        }
+    }
+    Model.Entrevista GetById(int idEntrevista)
+    {
+        using (EsantiagoRegistroDeEntrevistasContext context = new EsantiagoRegistroDeEntrevistasContext())
+        {
+            var query = (from entrevist in context.Entrevista
+                         join candidat in context.Candidatos on entrevist.IdCandidato equals candidat.IdCandidato
+                         where entrevist.IdEntrevista == idEntrevista
+                         select new
+                         {
+                             IdEntrevista = entrevist.IdEntrevista,
+                             FechaEntrevista = entrevist.FechaEntrevista,
+                             CalPsicometricos = entrevist.CalificacionPsicometricos,
+                             IdCandidato = candidat.IdCandidato
+                         }).FirstOrDefault();
+            if (query != null)
+            {
+                entrevista.IdEntrevista = query.IdEntrevista;
+                entrevista.CalificacionPsicometricos = query.CalPsicometricos;
+                entrevista.FechaEntrevista = query.FechaEntrevista;
+                entrevista.Candidato.IdCandidato = query.IdCandidato;
+            }
+        }
+        return entrevista;
+    }
+    void Action()
+    {
+        if(idEntrevista == 0)
+        {
+            using (EsantiagoRegistroDeEntrevistasContext context = new EsantiagoRegistroDeEntrevistasContext())
+            {
+                Entrevistum nuevaEntrevista = new Entrevistum();
+                nuevaEntrevista.IdCandidato = entrevista.Candidato.IdCandidato;
+                nuevaEntrevista.CalificacionPsicometricos = entrevista.CalificacionPsicometricos;
+                nuevaEntrevista.FechaEntrevista = entrevista.FechaEntrevista;
+                context.Entrevista.Add(nuevaEntrevista);
+                context.SaveChanges();
+            }
+        }
+        else
+        {
+            using(EsantiagoRegistroDeEntrevistasContext context = new EsantiagoRegistroDeEntrevistasContext())
+            {
+                var query = (from entrevist in context.Entrevista where entrevist.IdEntrevista == idEntrevista select entrevist).SingleOrDefault();
+                query.IdCandidato = entrevista.Candidato.IdCandidato;
+                query.CalificacionPsicometricos = entrevista.CalificacionPsicometricos;
+                query.FechaEntrevista = entrevista.FechaEntrevista;
+                context.SaveChanges();
+            }
+        }
+        NavigationManager.NavigateTo("/entrevistas");
+    }
+    public static List<object> GetCandidatos()
+    {
+        List<object> candidatos = new List<object>();
+        using(EsantiagoRegistroDeEntrevistasContext context = new EsantiagoRegistroDeEntrevistasContext())
+        {
+            var query = (from candidat in context.Candidatos
+                         select new
+                         {
+                             IdCandidato = candidat.IdCandidato,
+                             Nombre = candidat.Nombre,
+                             ApellidoPaterno = candidat.ApellidoPaterno,
+                             ApellidoMaterno = candidat.ApellidoMaterno
+                         });
+            if(query != null)
+            {
+                foreach(var item in query)
+                {
+                    Model.Candidato candidato = new Model.Candidato();
+                    candidato.IdCandidato = item.IdCandidato;
+                    candidato.Nombre = item.Nombre;
+                    candidato.ApellidoPaterno = item.ApellidoPaterno;
+                    candidato.ApellidoMaterno = item.ApellidoMaterno;
+                    candidatos.Add(candidato);
+                }
+            }
+        }
+        return candidatos;
+    }
+}

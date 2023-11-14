@@ -1,0 +1,103 @@
+﻿@page "/entrevistas"
+@inject NavigationManager NavigationManager
+<h3 class="text-center">Entrevistas</h3>
+<hr />
+<div>
+    <a class="btn btn-success" href="http://localhost:5108/entrevistaForm/0"><i class="fa-solid fa-clipboard"></i>  Agregar entrevista</a>
+</div>
+<hr />
+<div>
+    <table class="table table-dark table-hover text-center align-items-center">
+        <thead>
+            <tr>
+                <th>Actualizar</th>
+                <th>Fecha de entrevista</th>
+                <th>Calificación psicométrico</th>
+                <th>Nombre</th>
+                <th>Promedio</th>
+                <th>Pretensión ($)</th>
+                <th>Universidad</th>
+                <th>Eliminar</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach(Model.Entrevista entrevista in GetAll())
+            {
+                <tr>
+                    <td><a class="btn btn-warning" @onclick="() => ChageView(entrevista.IdEntrevista)"><i class="fa-solid fa-file-pen"></i></a></td>
+                    <td>@entrevista.FechaEntrevista.ToShortDateString()</td>
+                    <td>@entrevista.CalificacionPsicometricos</td>
+                    <td>@entrevista.Candidato.Nombre @entrevista.Candidato.ApellidoPaterno @entrevista.Candidato.ApellidoMaterno</td>
+                    <td>@entrevista.Candidato.Promedio</td>
+                    <td>@entrevista.Candidato.PretensionEconomica</td>
+                    <td>@entrevista.Candidato.Universidad.Nombre</td>
+                    <td><a class="btn btn-danger" @onclick="() => Delete(entrevista.IdEntrevista)"><i class="fa-solid fa-trash"></i></a></td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+@code {
+    public static List<object> GetAll()
+    {
+        List<object> miList = new List<object>();
+        using(PL.EsantiagoRegistroDeEntrevistasContext context = new PL.EsantiagoRegistroDeEntrevistasContext())
+        {
+            var query = (from entrevis in context.Entrevista
+                         join candidat in context.Candidatos on entrevis.IdCandidato equals candidat.IdCandidato
+                         join uni in context.Universidads on candidat.IdUniversidad equals uni.IdUniversidad
+                         select new
+                         {
+                             IdEntrevista = entrevis.IdEntrevista,
+                             FechaEntrevista = entrevis.FechaEntrevista,
+                             CalPsicometricos = entrevis.CalificacionPsicometricos,
+                             IdCandidato = candidat.IdCandidato,
+                             Nombre = candidat.Nombre,
+                             ApellidoPaterno = candidat.ApellidoPaterno,
+                             ApellidoMaterno = candidat.ApellidoMaterno,
+                             Contacto = candidat.Contacto,
+                             Promedio = candidat.Promedio,
+                             PretensionEconomica = candidat.PretensionEconomica,
+                             IdUniversidad = uni.IdUniversidad,
+                             NombreUniversidad = uni.Nombre
+                         });
+            if(query != null)
+            {
+                foreach(var entrevista in query)
+                {
+                    Model.Entrevista nuevaEntrevista= new Model.Entrevista();
+                    nuevaEntrevista.Candidato = new Model.Candidato();
+                    nuevaEntrevista.Candidato.Universidad = new Model.Universidad();
+                    nuevaEntrevista.IdEntrevista = entrevista.IdEntrevista;
+                    nuevaEntrevista.FechaEntrevista = entrevista.FechaEntrevista;
+                    nuevaEntrevista.CalificacionPsicometricos = entrevista.CalPsicometricos;
+                    nuevaEntrevista.Candidato.IdCandidato = entrevista.IdCandidato;
+                    nuevaEntrevista.Candidato.Nombre = entrevista.Nombre;
+                    nuevaEntrevista.Candidato.ApellidoPaterno = entrevista.ApellidoPaterno;
+                    nuevaEntrevista.Candidato.ApellidoMaterno = entrevista.ApellidoMaterno;
+                    nuevaEntrevista.Candidato.Contacto = entrevista.Contacto;
+                    nuevaEntrevista.Candidato.Promedio = entrevista.Promedio;
+                    nuevaEntrevista.Candidato.PretensionEconomica = entrevista.PretensionEconomica;
+                    nuevaEntrevista.Candidato.Universidad.IdUniversidad = entrevista.IdUniversidad;
+                    nuevaEntrevista.Candidato.Universidad.Nombre = entrevista.NombreUniversidad;
+                    miList.Add(nuevaEntrevista);
+                }
+            }
+        }
+        return miList;
+    }
+    void ChageView(int idEntrevista)
+    {
+        NavigationManager.NavigateTo($"/entrevistaForm/{idEntrevista}");
+    }
+    void Delete(int idEntrevista)
+    {
+        using(EsantiagoRegistroDeEntrevistasContext context = new EsantiagoRegistroDeEntrevistasContext())
+        {
+            var query = (from entrevist in context.Entrevista where entrevist.IdEntrevista == idEntrevista select entrevist).First();
+            context.Entrevista.Remove(query);
+            context.SaveChanges();
+        }
+        NavigationManager.NavigateTo("/entrevistas");
+    }
+}
