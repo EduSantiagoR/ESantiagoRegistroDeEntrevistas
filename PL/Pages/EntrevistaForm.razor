@@ -29,10 +29,31 @@
         </div>
     </form>
 </div>
+<Modal MostrarModal=@mostrarModal
+       MostrarModalChanged="ActualizarMostrarModal"
+       Mensaje="@Mensaje"
+       OnContinuar="ChangeView"
+       MostrarBotonCerrar="false">
+</Modal>
+
 @code {
     [Parameter]
     public int idEntrevista { get; set; }
+    bool mostrarModal = false;
+    string Mensaje;
 
+    void MostrarModal()
+    {
+        mostrarModal = true;
+    }
+    void ActualizarMostrarModal(bool valor)
+    {
+        mostrarModal = valor;
+    }
+    void ChangeView()
+    {
+        NavigationManager.NavigateTo("/entrevistas");
+    }
     Model.Entrevista entrevista;
 
     protected override void OnInitialized()
@@ -40,7 +61,7 @@
         entrevista = new Model.Entrevista();
         entrevista.Candidato = new Model.Candidato();
         entrevista.Candidato.Universidad = new Model.Universidad();
-        if(idEntrevista != 0 && idEntrevista != 0)
+        if(idEntrevista != 0)
         {
             GetById(idEntrevista);
         }
@@ -81,6 +102,7 @@
                 nuevaEntrevista.FechaEntrevista = entrevista.FechaEntrevista;
                 context.Entrevista.Add(nuevaEntrevista);
                 context.SaveChanges();
+                Mensaje = "Agregado correctamente.";
             }
         }
         else
@@ -92,9 +114,10 @@
                 query.CalificacionPsicometricos = entrevista.CalificacionPsicometricos;
                 query.FechaEntrevista = entrevista.FechaEntrevista;
                 context.SaveChanges();
+                Mensaje = "Actualización éxitosa.";
             }
         }
-        NavigationManager.NavigateTo("/entrevistas");
+        ActualizarMostrarModal(true);
     }
     public static List<object> GetCandidatos()
     {

@@ -51,9 +51,33 @@
         </div>
     </form>
 </div>
+
+<Modal MostrarModal=@mostrarModal
+    MostrarModalChanged="ActualizarMostrarModal" 
+    Mensaje="@Mensaje"
+    OnContinuar="ChangeView"
+    MostrarBotonCerrar="false">
+</Modal>
+
 @code {
     [Parameter]
     public int idCandidato { get; set; }
+
+    bool mostrarModal = false;
+    string Mensaje;
+
+    void MostrarModal()
+    {
+        mostrarModal = true;
+    }
+    void ActualizarMostrarModal(bool valor)
+    {
+        mostrarModal = valor;
+    }
+    void ChangeView()
+    {
+        NavigationManager.NavigateTo("/candidatos");
+    }
 
     Model.Candidato candidato;
 
@@ -83,6 +107,7 @@
                 nuevoCandidato.IdUniversidad = candidato.Universidad.IdUniversidad;
                 context.Candidatos.Add(nuevoCandidato);
                 context.SaveChanges();
+                Mensaje = "Agregado correctamente.";
             }
         }
         else
@@ -99,9 +124,10 @@
                 query.PretensionEconomica = candidato.PretensionEconomica;
                 query.IdUniversidad = candidato.Universidad.IdUniversidad;
                 context.SaveChanges();
+                Mensaje = "Actualización éxitosa";
             }
         }
-        NavigationManager.NavigateTo("/candidatos");
+        ActualizarMostrarModal(true);
     }
     Model.Candidato GetById(int idCandidato)
     {

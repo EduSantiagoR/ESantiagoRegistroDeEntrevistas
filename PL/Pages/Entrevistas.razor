@@ -31,13 +31,30 @@
                     <td>@entrevista.Candidato.Promedio</td>
                     <td>@entrevista.Candidato.PretensionEconomica</td>
                     <td>@entrevista.Candidato.Universidad.Nombre</td>
-                    <td><a class="btn btn-danger" @onclick="() => Delete(entrevista.IdEntrevista)"><i class="fa-solid fa-trash"></i></a></td>
+                    <td><a class="btn btn-danger" @onclick="() => AbrirModal(entrevista.IdEntrevista)"><i class="fa-solid fa-trash"></i></a></td>
                 </tr>
             }
         </tbody>
     </table>
 </div>
+<Modal MostrarModal=@mostrarModal
+       MostrarModalChanged="ActualizarMostrarModal"
+       Mensaje="¿Estas seguro de querer eliminar esta entrevista?"
+       OnContinuar="()=>Delete(idEntrevista)"
+       MostrarBotonCerrar="true">
+</Modal>
 @code {
+    bool mostrarModal = false;
+    int idEntrevista;
+    void AbrirModal(int id)
+    {
+        idEntrevista = id;
+        mostrarModal = true;
+    }
+    void ActualizarMostrarModal(bool valor)
+    {
+        mostrarModal = valor;
+    }
     public static List<object> GetAll()
     {
         List<object> miList = new List<object>();
@@ -98,6 +115,7 @@
             context.Entrevista.Remove(query);
             context.SaveChanges();
         }
+        ActualizarMostrarModal(false);
         NavigationManager.NavigateTo("/entrevistas");
     }
 }

@@ -1,5 +1,6 @@
 ﻿@page "/candidatos"
 @inject NavigationManager NavigationManager
+@using BootstrapBlazor
 <h3 class="text-center">Candidatos</h3>
 <hr />
 <div>
@@ -29,13 +30,32 @@
                     <td>@candidato.PretensionEconomica</td>
                     <td>@candidato.Promedio</td>
                     <td>@candidato.Universidad.Nombre</td>
-                    <td><a class="btn btn-danger" @onclick="()=>Delete(candidato.IdCandidato)"><i class="fa-solid fa-trash"></i></a></td>
+                    <td><a class="btn btn-danger" @onclick="()=>AbrirModal(candidato.IdCandidato)"><i class="fa-solid fa-trash"></i></a></td>
                 </tr>
             }
         </tbody>
     </table>
 </div>
+
+<Modal MostrarModal=@mostrarModal 
+    MostrarModalChanged="ActualizarMostrarModal" 
+    Mensaje="¿Estas seguro de querer eliminar este candidato?" 
+    OnContinuar="()=>Delete(idCandidato)"
+    MostrarBotonCerrar="true">
+</Modal>
+
 @code {
+    bool mostrarModal = false;
+    int idCandidato;
+    void AbrirModal(int id)
+    {
+        idCandidato = id;
+        mostrarModal = true;
+    }
+    void ActualizarMostrarModal(bool valor)
+    {
+        mostrarModal = valor;
+    }
     public static List<object> GetAll()
     {
         List<object> candidatos = new List<object>();
@@ -84,6 +104,7 @@
             context.Candidatos.Remove(query);
             context.SaveChanges();
         }
+        ActualizarMostrarModal(false);
         NavigationManager.NavigateTo("/candidatos");
     }
     void ChangeView(int idCandidato)
