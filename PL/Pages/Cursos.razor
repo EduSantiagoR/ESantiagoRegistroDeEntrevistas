@@ -1,0 +1,57 @@
+﻿@page "/cursos"
+<h3 class="text-center">Cursos</h3>
+<hr />
+<div class="row align-items-center">
+    @foreach (Model.Curso curso in GetCursos())
+    {
+        <div class="card mb-3" style="max-width: 450px; background-color:@curso.course.sector.colorTheme">
+            <div class="row g-0">
+                <div class="col-md-4 d-flex align-items-center" style="background-color:@curso.course.sector.colorTheme">
+                    <img src="@curso.course.imageUrl" class="img-fluid rounded-start">
+                </div>
+                <div class="col-md-8">
+                    <div class="card-body">
+                        @if(curso.advance == 100)
+                        {
+                            <div class="d-flex justify-content-end">
+                                <span style="color: #ffff00;"><i class="fa-solid fa-star"></i></span>
+                            </div>
+                        }
+                        <h5 class="card-title">@curso.course.name</h5>
+                        <p class="card-text">Inicio: @curso.inscripcionDate</p>
+                        <p class="card-text">Último ingreso: @curso.certificationDate</p>
+                        <p class="card-text"><small class="text-body-secondary">Folio: @curso.folioCertificate</small></p>
+                        <div style="border:0.5px solid black" class="progress" role="progressbar" aria-label="Example with label" aria-valuenow="@curso.advance" aria-valuemin="0" aria-valuemax="100">
+                            <div class="progress-bar" style="width: @curso.advance.ToString()%;background-color: @curso.course.sector.colorTheme">@curso.advance%</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <br />
+    }
+</div>
+@code {
+    public static List<object> GetCursos()
+    {
+        List<object> cursos = new List<object>();
+        using(var client = new HttpClient())
+        {
+            client.BaseAddress = new Uri("https://besvc.capacitateparaelempleo.org/api/");
+            var responseTask = client.GetAsync("inscriptions/TestReport");
+            responseTask.Wait();
+
+            var resultService = responseTask.Result;
+            if (resultService.IsSuccessStatusCode)
+            {
+                var readTask = resultService.Content.ReadFromJsonAsync<Model.Result>();
+                readTask.Wait();
+                foreach(var curso in readTask.Result.inscriptions)
+                {
+                    cursos.Add(curso);
+                }
+            }
+        }
+        return cursos;
+    }
+}
