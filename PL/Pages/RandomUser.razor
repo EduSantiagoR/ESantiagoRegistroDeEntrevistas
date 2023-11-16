@@ -1,0 +1,80 @@
+﻿@page "/randomuser"
+@using Newtonsoft.Json.Linq
+<h3 class="text-center">Random User</h3>
+<hr />
+<div>
+    <button class="btn btn-success" @onclick="GetUser">Nuevo usuario</button>
+    <button class="btn btn-danger" @onclick="Clean">Borrar todo</button>
+    <hr />
+    @if(filas.Count != 0)
+    {
+        <table class="table table-dark table-hover text-center">
+            <thead>
+                <tr>
+                    <th>Foto</th>
+                    <th>Nombre</th>
+                    <th>Username</th>
+                    <th>Password</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (Usuario user in filas)
+                {
+                    <tr>
+                        <td><img style="width:50px;height:50px" class="rounded-circle" src="@user.Foto" /></td>
+                        <td>@user.Nombre @user.ApellidoPaterno</td>
+                        <td>@user.UserName</td>
+                        <td>@user.Password</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+    else
+    {
+        <div class="alert alert-warning" role="alert">
+            Aún no tienes usuarios.
+        </div>
+    }
+</div>
+@code {
+    public List<Usuario> filas = new List<Usuario>();
+
+    public class Usuario
+    {
+        public string Nombre { get; set; }
+        public string ApellidoPaterno { get; set; }
+        public string UserName { get; set; }
+        public string Foto { get; set; }
+        public string Password { get; set; }
+    }
+
+    void Clean()
+    {
+        filas.Clear();
+    }
+    void GetUser()
+    {
+        using(var client = new HttpClient())
+        {
+            client.BaseAddress = new Uri("https://randomuser.me/api");
+            var responseTask = client.GetAsync("");
+            responseTask.Wait();
+
+            var result = responseTask.Result;
+            if (result.IsSuccessStatusCode)
+            {
+                var readTask = result.Content.ReadAsStringAsync();
+                dynamic resultJSON = JObject.Parse(readTask.Result);
+                readTask.Wait();
+                Usuario usuario = new Usuario();
+                usuario.Foto = resultJSON.results[0].picture.medium;
+                usuario.Nombre = resultJSON.results[0].name.first;
+                usuario.ApellidoPaterno = resultJSON.results[0].name.last;
+                usuario.UserName = resultJSON.results[0].login.username;
+                usuario.Password = resultJSON.results[0].login.password;
+                filas.Add(usuario);
+            }
+        }
+    }
+}
